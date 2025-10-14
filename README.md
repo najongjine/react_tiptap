@@ -3,6 +3,7 @@ npm create vite@latest my-app2 -- --template react-ts
 npm i @tiptap/react @tiptap/starter-kit @tiptap/extension-underline @tiptap/extension-link @tiptap/extension-placeholder @tiptap/extension-text-align @tiptap/extension-image
 npm i @tiptap/extension-text-style
 npm i @tiptap/extension-code-block-lowlight lowlight highlight.js
+npm install @tiptap/extension-text-align
 
 # React + TypeScript + Vite
 

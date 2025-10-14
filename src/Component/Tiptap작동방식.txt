@@ -1,0 +1,106 @@
+Tiptap 기능 구현의 4단계 원칙
+1. 기능 등록 (Extension)
+Tiptap 에디터가 해당 기능을 이해하고 처리할 수 있도록, useEditor 훅을 사용할 때 extensions 배열에 해당 기능을 등록해야 합니다.
+
+Bold나 CodeBlock 같은 기본적인 기능은 StarterKit 확장 안에 이미 포함되어 있으므로, 이 경우 별도로 등록할 필요 없이 StarterKit 하나로 해결됩니다.
+
+2. 버튼 생성 (UI)
+HTML/React로 원하는 스타일과 모양의 버튼을 만듭니다. 이 버튼은 에디터 상태와 명령을 제어하는 Toolbar 컴포넌트 내부에 위치합니다.
+
+3. Tiptap 명령 호출 (Command)
+생성한 버튼의 onClick 이벤트 핸들러 안에 Tiptap에서 미리 정의해 둔 에디터 명령(Command)을 호출합니다.
+
+예: editor.chain().focus().**toggleBold()**.run()
+
+이 명령이 에디터 본문의 텍스트에 실제로 Bold 마크를 적용하거나 제거하는 역할을 합니다.
+
+4. 상태 확인 및 UI 갱신 (State & Re-render)
+사용자에게 현재 상태를 시각적으로 보여주기 위해 두 가지를 처리합니다.
+
+상태 확인: 버튼의 스타일을 결정하기 위해 Tiptap의 editor.isActive('기능명') 메서드를 사용하여 현재 커서 위치 또는 선택 영역에 해당 기능이 적용되었는지 확인합니다.
+
+화면 갱신: 에디터 본문의 내용이나 커서 위치가 바뀔 때마다 Tiptap이 발생시키는 이벤트(selectionUpdate, transaction 등)를 포착하여 React 컴포넌트(Toolbar)를 **강제 갱신(Force Update)**합니다. 이는 Toolbar 컴포넌트의 useEffect 안에 있는 forceUpdate 코드가 담당합니다.
+
+
+
+
+
+Bold 기능 작동 원리 분석
+1. UI (Toolbar 버튼)
+Bold 기능을 실행하는 버튼은 Toolbar 컴포넌트에 있습니다.
+<button
+  style={{ ...btn, ...(editor.isActive("bold") ? btnOn : {}) }}
+  onClick={() => editor.chain().focus().toggleBold().run()}
+>
+  Bold
+</button>
+
+① 버튼 스타일 (editor.isActive("bold") ? btnOn : {})
+현재 커서 위치나 선택 영역에 Bold 마크가 적용되어 있는지 확인합니다.
+
+editor.isActive("bold"): Tiptap API로, 현재 선택 영역에 'bold' 마크가 활성화되어 있으면 true를 반환합니다.
+
+이 값이 true이면 버튼에 btnOn 스타일(약간 파란색 배경)이 적용되어 현재 Bold 상태임을 시각적으로 알려줍니다.
+
+② 클릭 시 동작 (onClick 핸들러)
+버튼을 클릭하면 Bold 기능을 토글(켜고 끄는) 명령이 실행됩니다.
+
+editor.chain().focus().toggleBold().run(): Tiptap Command를 실행하는 표준 방식입니다.
+
+editor.chain(): 여러 명령을 순서대로 실행할 수 있게 체이닝을 시작합니다.
+
+focus(): 에디터에 포커스를 맞춥니다.
+
+toggleBold(): Bold 마크를 토글하는 핵심 명령입니다. Bold가 적용되어 있으면 제거하고, 적용되어 있지 않으면 적용합니다.
+
+run(): 체인된 명령들을 실제로 실행합니다.
+
+
+
+2. Tiptap Extensions (기능 활성화)
+이 명령이 작동하기 위해서는 Bold 기능 자체가 에디터에 **확장(Extension)**으로 추가되어 있어야 합니다.
+
+// MyEditor 컴포넌트 내부의 useEditor 훅
+const editor = useEditor({
+  extensions: [
+    // ... 다른 확장들
+    StarterKit.configure({
+      blockquote: false,
+      heading: false,
+      // ...
+    }),
+    // ...
+  ],
+  // ...
+});
+
+Bold 기능은 Tiptap의 기본 확장 묶음인 **StarterKit**에 포함되어 있습니다.
+
+StarterKit을 사용하고 있으므로, 별도로 설정하지 않아도 Bold, Italic, Strike, Paragraph, BulletList, Code Block 등의 기본적인 텍스트 편집 기능이 자동으로 활성화됩니다.
+
+
+
+3. 상태 관리 (UI 업데이트)
+버튼의 상태(isActive)를 실시간으로 업데이트하여 Bold가 켜졌는지 꺼졌는지 즉시 사용자에게 보여줘야 합니다.
+
+// Toolbar 컴포넌트 내부
+const [, forceUpdate] = useState(0);
+
+useEffect(() => {
+  if (!editor) return;
+  const r = () => forceUpdate((v) => v + 1);
+  editor.on("selectionUpdate", r);
+  editor.on("transaction", r);
+  editor.on("update", r);
+  editor.on("focus", r);
+  editor.on("blur", r);
+  // ...
+}, [editor]);
+
+Tiptap 에디터는 텍스트가 변경되거나 선택 영역이 바뀔 때마다 이벤트를 발생시킵니다.
+
+Toolbar 컴포넌트는 useEffect 훅을 사용하여 editor에서 발생하는 주요 이벤트(selectionUpdate, transaction, update 등)에 리스너를 등록합니다.
+
+이벤트가 발생하면 forceUpdate((v) => v + 1)를 호출하여 Toolbar 컴포넌트를 강제로 리렌더링합니다.
+
+리렌더링이 되면 editor.isActive("bold")가 다시 계산되고, 그 결과에 따라 Bold 버튼의 스타일이 즉시 업데이트됩니다.

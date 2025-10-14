@@ -4,7 +4,6 @@ import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import { FontSize } from "./FontSize"; // 커스텀 마크 (그대로 사용)
 import Dropcursor from "@tiptap/extension-dropcursor";
-import TextAlign from "@tiptap/extension-text-align"; // ⬅️ 추가
 
 const btn: React.CSSProperties = {
   padding: "6px 10px",
@@ -152,6 +151,7 @@ function Toolbar({ editor }: { editor: any }) {
       >
         ↷ Redo
       </button>
+
       <button
         style={{ ...btn, ...(editor.isActive("bold") ? btnOn : {}) }}
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -170,24 +170,7 @@ function Toolbar({ editor }: { editor: any }) {
       >
         Strike
       </button>
-      <button
-        style={{
-          ...btn,
-          ...(editor.isActive({ textAlign: "left" }) ? btnOn : {}),
-        }}
-        onClick={() => editor.chain().focus().setTextAlign("left").run()}
-      >
-        ⬅️ 왼쪽 정렬
-      </button>
-      <button
-        style={{
-          ...btn,
-          ...(editor.isActive({ textAlign: "center" }) ? btnOn : {}),
-        }}
-        onClick={() => editor.chain().focus().setTextAlign("center").run()}
-      >
-        Alignment Center
-      </button>
+
       {/* ⬇️ 인라인 코드 토글 */}
       <button // ⬅️
         style={{ ...btn, ...(editor.isActive("code") ? btnOn : {}) }}
@@ -196,18 +179,21 @@ function Toolbar({ editor }: { editor: any }) {
       >
         ` Code
       </button>
+
       <button
         style={btn}
         onClick={() => editor.chain().focus().unsetAllMarks().run()}
       >
         Clear
       </button>
+
       <button
         style={{ ...btn, ...(editor.isActive("paragraph") ? btnOn : {}) }}
         onClick={() => editor.chain().focus().setParagraph().run()}
       >
         본문
       </button>
+
       {/* 폰트 크기 */}
       <select
         style={{
@@ -228,6 +214,7 @@ function Toolbar({ editor }: { editor: any }) {
       <button style={btn} onClick={unsetFontSizeSmart}>
         크기 초기화
       </button>
+
       <button
         style={{ ...btn, ...(editor.isActive("bulletList") ? btnOn : {}) }}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -246,6 +233,7 @@ function Toolbar({ editor }: { editor: any }) {
       >
         — 구분선
       </button>
+
       {/* ⬇️ 코드블록 토글 & 복사 버튼 */}
       <button // ⬅️
         style={{ ...btn, ...(isCodeBlock ? btnOn : {}) }}
@@ -262,6 +250,7 @@ function Toolbar({ editor }: { editor: any }) {
       >
         ⧉ Copy
       </button>
+
       {/* 이미지 업로드 */}
       <button style={btn} onClick={openFileDialog}>
         🖼 이미지
@@ -278,16 +267,10 @@ function Toolbar({ editor }: { editor: any }) {
   );
 }
 
-export default function MyEditorCompo() {
+export default function MyEditor() {
   const editor = useEditor({
     extensions: [
       FontSize,
-      TextAlign.configure({
-        // ⬅️ 확장 추가
-        types: ["heading", "paragraph", "codeBlock"], // 정렬을 적용할 노드 지정
-        alignments: ["left", "center", "right", "justify"], // 사용할 정렬 종류
-        defaultAlignment: "left", // 기본 정렬 설정
-      }),
       Image.configure({
         inline: false,
         allowBase64: true,
