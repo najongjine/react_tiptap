@@ -4,6 +4,7 @@ npm i @tiptap/react @tiptap/starter-kit @tiptap/extension-underline @tiptap/exte
 npm i @tiptap/extension-text-style
 npm i @tiptap/extension-code-block-lowlight lowlight highlight.js
 npm install @tiptap/extension-text-align
+npm install @tiptap/extension-color
 
 # React + TypeScript + Vite
 
