@@ -11,6 +11,7 @@ import { AdvancedImage } from "@cloudinary/react";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
 import TextAlign from "@tiptap/extension-text-align";
+import { useNavigate } from "react-router-dom";
 
 const btn: React.CSSProperties = {
   padding: "6px 10px",
@@ -397,6 +398,7 @@ function Toolbar({ editor }: { editor: any }) {
 }
 
 export default function MyEditorCompoV3() {
+  const navigate = useNavigate();
   const editor = useEditor({
     extensions: [
       TextStyle,
@@ -478,6 +480,8 @@ export default function MyEditorCompoV3() {
     if (!editor) return;
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const ENDPOINT_URL = import.meta.env.VITE_SERVER_API_TIPTAP_ENDPOINT;
+    const reactListPage =
+      import.meta.env.VITE_SERVER_REACT_AFTER_TIPTAP_ROUTE || "/";
     const fullUrl = `${API_BASE_URL}/${ENDPOINT_URL}`;
     const payload = {
       html: editor.getHTML(),
@@ -486,19 +490,19 @@ export default function MyEditorCompoV3() {
 
     console.log("--- Editor Content Saved ---");
     try {
-      const response = await fetch(fullUrl, {
+      let res: any = await fetch(fullUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        // 서버 응답이 200번대가 아닐 경우 에러 처리
-        alert(`HTTP error! status: ${response.status}`);
+      res = await res.json();
+      if (!res?.success) {
+        alert(`저장 실패. ${res?.message ?? ""}`);
+        return;
       }
 
-      // 필요하면 여기서 토스트/알림 띄워도 됨
-      alert("저장 성공!");
+      navigate(reactListPage);
     } catch (error: any) {
       alert(`문서 저장 중 오류 발생. ${error?.message ?? ""}`);
       // 사용자에게 오류를 알리는 로직 추가
