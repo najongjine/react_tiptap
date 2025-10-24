@@ -476,23 +476,34 @@ export default function MyEditorCompoV3() {
 
   const handleSave = async () => {
     if (!editor) return;
-
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    const ENDPOINT_URL = import.meta.env.VITE_SERVER_API_TIPTAP_ENDPOINT;
+    const fullUrl = `${API_BASE_URL}/${ENDPOINT_URL}`;
     const payload = {
       html: editor.getHTML(),
       json: editor.getJSON(),
     };
 
     console.log("--- Editor Content Saved ---");
-    console.log("HTML:", payload.html);
-    console.log("JSON:", payload.json);
-    console.log("----------------------------");
-
     try {
-      // alert("저장 성공! (데이터는 콘솔에서 확인 가능)"); // alert() 제거 지침에 따라 주석 처리
-      console.log("저장 성공! (데이터는 콘솔에서 확인 가능)");
+      const response = await fetch(fullUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        // 서버 응답이 200번대가 아닐 경우 에러 처리
+        alert(`HTTP error! status: ${response.status}`);
+      }
+
+      // 필요하면 여기서 토스트/알림 띄워도 됨
+      alert("저장 성공!");
     } catch (error: any) {
-      console.error(`문서 저장 중 오류 발생. ${error?.message ?? ""}`);
+      alert(`문서 저장 중 오류 발생. ${error?.message ?? ""}`);
+      // 사용자에게 오류를 알리는 로직 추가
     }
+    console.log("----------------------------");
   };
 
   return (

@@ -1,0 +1,27 @@
+router.post("/save_tiptap", async (c) => {
+  let result: { success: boolean; data: any; code: string; message: string } = {
+    success: true,
+    data: null,
+    code: "",
+    message: ``,
+  };
+  try {
+    // body 에서 데이터 꺼내기
+    const body = await c?.req?.json();
+
+    const htmlContent: string = body?.html ?? "";
+    const jsonContent: any = body?.json ?? null; // JSON 객체
+
+    const tiptapRepository = AppDataSource.getRepository(TTiptapTest);
+    let newdata = new TTiptapTest();
+    newdata.htmlContent = htmlContent;
+    newdata.jsonContent = jsonContent;
+    newdata = await tiptapRepository.save(newdata);
+    result.data = newdata;
+    return c.json(result);
+  } catch (error: any) {
+    result.success = false;
+    result.message = `error. ${error?.message ?? ""}`;
+    return c.json(result);
+  }
+});
