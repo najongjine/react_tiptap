@@ -4,7 +4,10 @@ import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
 import { FontSize } from "./FontSize"; // 커스텀 마크 (그대로 사용)
 import Dropcursor from "@tiptap/extension-dropcursor";
-import TextAlign from "@tiptap/extension-text-align"; // ⬅️ 추가
+import { Cloudinary } from "@cloudinary/url-gen";
+import { auto } from "@cloudinary/url-gen/actions/resize";
+import { autoGravity } from "@cloudinary/url-gen/qualifiers/gravity";
+import { AdvancedImage } from "@cloudinary/react";
 
 const btn: React.CSSProperties = {
   padding: "6px 10px",
@@ -25,15 +28,41 @@ const selectStyle: React.CSSProperties = {
   cursor: "pointer",
 };
 
+const CLOUD_NAME = "dxbtexbak";
+const UPLOAD_PRESET = "tiptap_image_upload_test";
 /** (선택) 서버 업로드 훅 */
 async function uploadAndGetUrl(file: File): Promise<string> {
-  const dataUrl = await new Promise<string>((res, rej) => {
-    const fr = new FileReader();
-    fr.onload = () => res(fr.result as string);
-    fr.onerror = () => rej(fr.error);
-    fr.readAsDataURL(file);
-  });
-  return dataUrl;
+  // Cloudinary REST API 엔드포인트 URL
+  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+
+  // FormData 객체를 생성하여 파일과 업로드 프리셋을 담습니다.
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", UPLOAD_PRESET);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      body: formData, // FormData를 body로 직접 전송
+    });
+
+    if (!response.ok) {
+      // HTTP 에러 처리
+      const errorText = await response.text();
+      console.error("Cloudinary upload error response:", errorText);
+      throw new Error(
+        "Cloudinary upload failed with status " + response.status
+      );
+    }
+
+    const data = await response.json();
+    // 성공 시 Cloudinary 응답에서 secure_url을 반환합니다.
+    return data.secure_url;
+  } catch (error) {
+    console.error("Error uploading to Cloudinary:", error);
+    // 업로드 실패 시 대체 URL 또는 빈 문자열 반환
+    return "";
+  }
 }
 
 function Toolbar({ editor }: { editor: any }) {
@@ -152,6 +181,7 @@ function Toolbar({ editor }: { editor: any }) {
       >
         ↷ Redo
       </button>
+
       <button
         style={{ ...btn, ...(editor.isActive("bold") ? btnOn : {}) }}
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -170,24 +200,7 @@ function Toolbar({ editor }: { editor: any }) {
       >
         Strike
       </button>
-      <button
-        style={{
-          ...btn,
-          ...(editor.isActive({ textAlign: "left" }) ? btnOn : {}),
-        }}
-        onClick={() => editor.chain().focus().setTextAlign("left").run()}
-      >
-        ⬅️ 왼쪽 정렬
-      </button>
-      <button
-        style={{
-          ...btn,
-          ...(editor.isActive({ textAlign: "center" }) ? btnOn : {}),
-        }}
-        onClick={() => editor.chain().focus().setTextAlign("center").run()}
-      >
-        Alignment Center
-      </button>
+
       {/* ⬇️ 인라인 코드 토글 */}
       <button // ⬅️
         style={{ ...btn, ...(editor.isActive("code") ? btnOn : {}) }}
@@ -196,18 +209,21 @@ function Toolbar({ editor }: { editor: any }) {
       >
         ` Code
       </button>
+
       <button
         style={btn}
         onClick={() => editor.chain().focus().unsetAllMarks().run()}
       >
         Clear
       </button>
+
       <button
         style={{ ...btn, ...(editor.isActive("paragraph") ? btnOn : {}) }}
         onClick={() => editor.chain().focus().setParagraph().run()}
       >
         본문
       </button>
+
       {/* 폰트 크기 */}
       <select
         style={{
@@ -228,6 +244,7 @@ function Toolbar({ editor }: { editor: any }) {
       <button style={btn} onClick={unsetFontSizeSmart}>
         크기 초기화
       </button>
+
       <button
         style={{ ...btn, ...(editor.isActive("bulletList") ? btnOn : {}) }}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -246,6 +263,7 @@ function Toolbar({ editor }: { editor: any }) {
       >
         — 구분선
       </button>
+
       {/* ⬇️ 코드블록 토글 & 복사 버튼 */}
       <button // ⬅️
         style={{ ...btn, ...(isCodeBlock ? btnOn : {}) }}
@@ -262,6 +280,7 @@ function Toolbar({ editor }: { editor: any }) {
       >
         ⧉ Copy
       </button>
+
       {/* 이미지 업로드 */}
       <button style={btn} onClick={openFileDialog}>
         🖼 이미지
@@ -278,16 +297,10 @@ function Toolbar({ editor }: { editor: any }) {
   );
 }
 
-export default function MyEditorCompo() {
+export default function MyEditorCompoV2() {
   const editor = useEditor({
     extensions: [
       FontSize,
-      TextAlign.configure({
-        // ⬅️ 확장 추가
-        types: ["heading", "paragraph", "codeBlock"], // 정렬을 적용할 노드 지정
-        alignments: ["left", "center", "right", "justify"], // 사용할 정렬 종류
-        defaultAlignment: "left", // 기본 정렬 설정
-      }),
       Image.configure({
         inline: false,
         allowBase64: true,
@@ -355,19 +368,34 @@ export default function MyEditorCompo() {
 
   // MyEditor 내부
   const handleSave = async () => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     if (!editor) return; // 에디터 준비 전 가드
 
     const payload = {
       html: editor.getHTML(), // 뷰어/미리보기 용
       json: editor.getJSON(), // 재편집/복원 용
     };
+    // 2. 기본 주소와 엔드포인트를 결합하여 전체 URL 생성
+    const fullUrl = `${API_BASE_URL}/api/test/save_tiptap`;
 
-    await fetch("/api/docs/demo-1", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    // 필요하면 여기서 토스트/알림 띄워도 됨
+    try {
+      const response = await fetch(fullUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        // 서버 응답이 200번대가 아닐 경우 에러 처리
+        alert(`HTTP error! status: ${response.status}`);
+      }
+
+      // 필요하면 여기서 토스트/알림 띄워도 됨
+      alert("저장 성공!");
+    } catch (error: any) {
+      alert(`문서 저장 중 오류 발생. ${error?.message ?? ""}`);
+      // 사용자에게 오류를 알리는 로직 추가
+    }
   };
 
   return (
