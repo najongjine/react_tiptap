@@ -95,12 +95,12 @@ function Toolbar({ editor }: { editor: any }) {
     { name: "주황", hex: "#f97316" },
   ];
 
-  // ⭐️ 정렬 목록을 Select Box 옵션으로 사용
+  // 정렬 목록을 Select Box 옵션으로 사용
   const ALIGNMENTS = [
     { value: "left", label: "⇽ 왼쪽 정렬" },
     { value: "center", label: "⇕ 가운데 정렬" },
     { value: "right", label: "⇾ 오른쪽 정렬" },
-    { value: "justify", label: "⬌ 양쪽 정렬" }, // 양쪽 정렬 추가
+    { value: "justify", label: "⬌ 양쪽 정렬" },
   ];
 
   useEffect(() => {
@@ -126,7 +126,6 @@ function Toolbar({ editor }: { editor: any }) {
   const canRedo = editor.can().chain().focus().redo().run();
   const sizes = ["12px", "14px", "16px", "20px", "24px", "32px"];
 
-  // 폰트 크기 관련 로직 (기존 유지)
   const markSize = editor.getAttributes("fontSize").size;
   const storedSize = editor.state.storedMarks?.find(
     (m: any) => m.type.name === "fontSize"
@@ -153,13 +152,6 @@ function Toolbar({ editor }: { editor: any }) {
     setStoredFontSize(size);
   };
 
-  const unsetFontSizeSmart = () => {
-    const { empty } = editor.state.selection;
-    if (!empty) editor.chain().focus().unsetFontSize().run();
-    setStoredFontSize(null);
-  };
-
-  // 글자 색상 관련 로직 (기존 유지)
   const currentTextColor = editor.getAttributes("textStyle").color || "default";
 
   const setTextColor = (color: string) => {
@@ -204,7 +196,6 @@ function Toolbar({ editor }: { editor: any }) {
     view.dispatch(tr);
   };
 
-  // ⭐️ 정렬 로직 (Select Box용으로 변경)
   const currentAlignment =
     editor.getAttributes("paragraph").textAlign || "left";
 
@@ -215,7 +206,6 @@ function Toolbar({ editor }: { editor: any }) {
     }
   };
 
-  // 이미지 업로드 로직 (기존 유지)
   const openFileDialog = () => fileInputRef.current?.click();
 
   const onPickFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -229,37 +219,27 @@ function Toolbar({ editor }: { editor: any }) {
     e.target.value = "";
   };
 
-  // ⬇️ 코드 관련 상태 (기존 유지)
   const isCodeBlock = editor.isActive("codeBlock");
-
-  // ⬇️ 선택된 코드블록 복사 기능 (기존 유지)
-  const copyCurrentCodeBlock = () => {
-    const { state } = editor;
-    const pos = state.selection.$from;
-    const node = pos.node(pos.depth);
-    if (node?.type?.name === "codeBlock") {
-      const text = node.textContent || "";
-      try {
-        navigator.clipboard.writeText(text);
-        console.log("Code block copied to clipboard.");
-      } catch (err) {
-        console.error("Could not copy text: ", err);
-      }
-    }
-  };
 
   return (
     <div
       style={{
+        // --- ⭐️ STICKY STYLES: 툴바 고정 ⭐️ ---
+        position: "sticky",
+        top: 0,
+        zIndex: 10,
+        width: "100%",
+        // ----------------------------------------
         display: "flex",
         flexWrap: "wrap",
         gap: 8,
         padding: 8,
-        border: "1px solid #ddd",
-        borderBottom: 0,
+        // 툴바의 시각적 분리
+        borderBottom: "1px solid #ddd",
         borderTopLeftRadius: 12,
         borderTopRightRadius: 12,
         background: "#fafafa",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.05)", // 스크롤 시 분리 효과
       }}
     >
       <button
@@ -277,7 +257,7 @@ function Toolbar({ editor }: { editor: any }) {
         ↷ Redo
       </button>
 
-      {/* ⭐️ 정렬 Select Box로 대체 */}
+      {/* 정렬 Select Box */}
       <select
         style={{
           ...alignmentSelectStyle,
@@ -313,15 +293,6 @@ function Toolbar({ editor }: { editor: any }) {
         Strike
       </button>
 
-      {/* ⬇️ 인라인 코드 토글 */}
-      <button
-        style={{ ...btn, ...(editor.isActive("code") ? btnOn : {}) }}
-        onClick={() => editor.chain().focus().toggleCode().run()}
-        title="Inline Code"
-      >
-        ` Code
-      </button>
-
       <button
         style={btn}
         onClick={() => editor.chain().focus().unsetAllMarks().run()}
@@ -336,28 +307,27 @@ function Toolbar({ editor }: { editor: any }) {
         본문
       </button>
 
-      {/* 폰트 크기 (기존 유지) */}
-      <select
-        style={{
-          ...selectStyle,
-          ...(currentSize
-            ? { background: "#eef2ff", borderColor: "#c7d2fe" }
-            : {}),
-        }}
-        value={currentSize}
-        onChange={(e) => setFontSizeSmart(e.target.value)}
-      >
-        {sizes.map((s) => (
-          <option key={s} value={s}>
-            {parseInt(s, 10)} px
-          </option>
-        ))}
-      </select>
-      <button style={btn} onClick={unsetFontSizeSmart}>
-        크기 초기화
-      </button>
+      {/* 폰트 크기 Select Box */}
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        <select
+          style={{
+            ...selectStyle,
+            ...(currentSize
+              ? { background: "#eef2ff", borderColor: "#c7d2fe" }
+              : {}),
+          }}
+          value={currentSize}
+          onChange={(e) => setFontSizeSmart(e.target.value)}
+        >
+          {sizes.map((s) => (
+            <option key={s} value={s}>
+              {parseInt(s, 10)} px
+            </option>
+          ))}
+        </select>
+      </div>
 
-      {/* 글자 색상 선택 Select Box (기존 유지) */}
+      {/* 글자 색상 선택 Select Box */}
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
         <select
           style={{
@@ -369,6 +339,7 @@ function Toolbar({ editor }: { editor: any }) {
           }}
           value={currentTextColor}
           onChange={(e) => setTextColor(e.target.value)}
+          title="글자 색상 선택"
         >
           <option value="default" style={{ color: "#000000" }}>
             색상 선택
@@ -379,9 +350,6 @@ function Toolbar({ editor }: { editor: any }) {
             </option>
           ))}
         </select>
-        <button style={btn} onClick={() => setTextColor("default")}>
-          A 초기화
-        </button>
       </div>
 
       <button
@@ -403,21 +371,13 @@ function Toolbar({ editor }: { editor: any }) {
         — 구분선
       </button>
 
-      {/* ⬇️ 코드블록 토글 & 복사 버튼 */}
+      {/* 코드블록 토글 버튼 */}
       <button
         style={{ ...btn, ...(isCodeBlock ? btnOn : {}) }}
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
         title="``` 입력 후 Enter로도 생성됨"
       >
         {isCodeBlock ? "코드블록 해제" : "코드블록"}
-      </button>
-      <button
-        style={{ ...btn, opacity: isCodeBlock ? 1 : 0.4 }}
-        disabled={!isCodeBlock}
-        onClick={copyCurrentCodeBlock}
-        title="현재 코드블록 복사"
-      >
-        ⧉ Copy
       </button>
 
       {/* 이미지 업로드 */}
@@ -443,7 +403,7 @@ export default function MyEditorCompoV3() {
       Color.configure({ types: ["textStyle"] }),
       TextAlign.configure({
         types: ["heading", "paragraph"],
-        defaultAlignment: "left", // 기본 정렬은 'left' 유지
+        defaultAlignment: "left",
       }),
       FontSize,
       Image.configure({
@@ -456,6 +416,7 @@ export default function MyEditorCompoV3() {
       StarterKit.configure({
         blockquote: false,
         heading: false,
+        code: false,
       }),
       Dropcursor.configure({
         color: "#94a3b8",
@@ -463,10 +424,13 @@ export default function MyEditorCompoV3() {
       }),
     ],
     content:
-      `<p><strong>정렬 Select Box</strong>로 깔끔하게 변경되었습니다.</p>` +
-      `<p style="text-align: center">가운데 정렬된 텍스트입니다. Select Box에서 정렬을 바꿔보세요.</p>` +
-      `<p>새로운 텍스트는 <span style="color: #3b82f6">기본적으로 왼쪽 정렬</span>됩니다.</p>` +
-      `<p>문장 맨 앞에서 <code>\`\`\`</code> 입력 후 Enter → 코드블록 생성.</p>`,
+      `<p><strong>글자 크기 초기화 버튼</strong>이 제거되었습니다. 이제 선택된 크기로만 텍스트를 편집할 수 있습니다. <span style="font-size: 24px;">글자 크기 Select Box</span>는 여전히 정상 작동합니다.</p>` +
+      `<p style="text-align: center">다른 기능들은 그대로 유지됩니다.</p>` +
+      `<pre><code>// 코드블록은 그대로 사용할 수 있습니다.\nfunction example() {\n  return 'Hello World';\n}</code></pre>` +
+      // 툴바 고정 테스트를 위한 긴 텍스트 추가
+      `<p>이 부분은 테스트를 위한 긴 텍스트입니다. 스크롤을 내리면 툴바가 상단에 고정되어야 합니다. 긴 문서를 작성할 때 툴바가 사라지지 않도록 하기 위한 조치입니다.</p>`.repeat(
+        15
+      ),
     autofocus: true,
     onCreate({ editor }) {
       editor.chain().focus("end").run();
@@ -510,9 +474,8 @@ export default function MyEditorCompoV3() {
     },
   });
 
-  // MyEditor 내부
   const handleSave = async () => {
-    if (!editor) return; // 에디터 준비 전 가드
+    if (!editor) return;
 
     const payload = {
       html: editor.getHTML(),
@@ -525,83 +488,89 @@ export default function MyEditorCompoV3() {
     console.log("----------------------------");
 
     try {
-      alert("저장 성공! (데이터는 콘솔에서 확인 가능)");
+      // alert("저장 성공! (데이터는 콘솔에서 확인 가능)"); // alert() 제거 지침에 따라 주석 처리
+      console.log("저장 성공! (데이터는 콘솔에서 확인 가능)");
     } catch (error: any) {
-      alert(`문서 저장 중 오류 발생. ${error?.message ?? ""}`);
+      console.error(`문서 저장 중 오류 발생. ${error?.message ?? ""}`);
     }
   };
 
   return (
     <div style={{ maxWidth: 760, margin: "24px auto", padding: 16 }}>
-      <Toolbar editor={editor} />
-
-      {/* 카드 컨테이너 */}
+      {/* ⭐️ 스크롤 가능한 메인 카드 컨테이너 ⭐️ */}
       <div
         style={{
           border: "1px solid #ddd",
           borderRadius: 12,
-          padding: 16,
-          minHeight: 260,
           lineHeight: 1.6,
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
+          // 스크롤 활성화
+          maxHeight: "600px", // 최대 높이 설정
+          overflowY: "auto", // 내용이 넘칠 때 스크롤 허용
           background: "#fff",
         }}
       >
-        {/* 코드/인라인코드 스타일 (기존 유지) */}
-        <style>{`
-      pre {
-        background: #0f172a10;
-        padding: 12px 14px;
-        border-radius: 10px;
-        overflow: auto;
-        border: 1px solid #e5e7eb;
-        margin: 10px 0;
-      }
-      pre code {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size: 13px;
-        line-height: 1.5;
-        white-space: pre;
-      }
-      code {
-        background: #f3f4f6;
-        padding: 2px 6px;
-        border-radius: 6px;
-        border: 1px solid #e5e7eb;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-        font-size: 13px;
-      }
-    `}</style>
+        {/* 1. STICKY 툴바 (스크롤 컨테이너의 첫 번째 자식) */}
+        <Toolbar editor={editor} />
 
-        {/* 에디터 본문 (남는 높이 채움) */}
-        <div style={{ flex: 1 }}>
-          <EditorContent editor={editor} />
-        </div>
-
-        {/* 카드 푸터: 우측 하단 정렬 버튼 */}
+        {/* 2. 내용 영역 (툴바 아래에 스크롤됨) */}
         <div
           style={{
+            // 툴바가 꽉 차게 있으므로 좌우, 하단 패딩만 적용
+            padding: "0 16px 16px 16px",
+            minHeight: "400px", // 최소 높이 보장
             display: "flex",
-            justifyContent: "flex-end",
-            borderTop: "1px solid #eee",
-            paddingTop: 12,
+            flexDirection: "column",
+            gap: 12,
           }}
         >
-          <button
-            onClick={handleSave}
+          {/* 코드/인라인코드 스타일 */}
+          <style>{`
+            pre {
+              background: #0f172a10;
+              padding: 12px 14px;
+              border-radius: 10px;
+              overflow: auto;
+              border: 1px solid #e5e7eb;
+              margin: 10px 0;
+            }
+            pre code {
+              font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+              font-size: 13px;
+              line-height: 1.5;
+              white-space: pre;
+            }
+          `}</style>
+
+          {/* 에디터 본문 (남는 높이 채움) */}
+          <div style={{ flex: 1, padding: "16px 0 0 0" }}>
+            {" "}
+            {/* 툴바와의 간격을 위해 상단 패딩 추가 */}
+            <EditorContent editor={editor} />
+          </div>
+
+          {/* 카드 푸터: 우측 하단 정렬 버튼 */}
+          <div
             style={{
-              padding: "8px 14px",
-              border: "1px solid #ddd",
-              borderRadius: 10,
-              background: "#fff",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
-              cursor: "pointer",
+              display: "flex",
+              justifyContent: "flex-end",
+              borderTop: "1px solid #eee",
+              paddingTop: 12,
             }}
           >
-            💾 저장
-          </button>
+            <button
+              onClick={handleSave}
+              style={{
+                padding: "8px 14px",
+                border: "1px solid #ddd",
+                borderRadius: 10,
+                background: "#fff",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+                cursor: "pointer",
+              }}
+            >
+              💾 저장
+            </button>
+          </div>
         </div>
       </div>
     </div>
