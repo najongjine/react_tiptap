@@ -492,7 +492,7 @@ export default function MyEditorCompoV3() {
     try {
       let res: any = await fetch(fullUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { Authorization: "", "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
