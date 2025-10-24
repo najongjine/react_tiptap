@@ -45,10 +45,10 @@ const alignmentSelectStyle: React.CSSProperties = {
   fontWeight: "bold",
 };
 
-const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 /** (선택) 서버 업로드 훅 */
 async function uploadAndGetUrl(file: File): Promise<string> {
+  const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
   // Cloudinary REST API 엔드포인트 URL
   const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 
