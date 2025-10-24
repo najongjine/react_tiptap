@@ -18,13 +18,13 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import MyEditorCompo from "../Component/MyEditorCompo";
-import MyEditorCompoV2 from "../Component/MyEditorCompoV2";
+import MyEditorCompoV3 from "../Component/MyEditorCompoV3";
 
 const MyEditor: React.FC = () => {
   const mode = import.meta.env.MODE;
   return (
     <div className="">
-      <MyEditorCompoV2 />
+      <MyEditorCompoV3 />
     </div>
   );
 };
